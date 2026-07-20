@@ -106,6 +106,16 @@ Rules that always apply, regardless of which projects are listed:
 
 ## Rules & Constraints
 
+- ASSETS ARE PUBLIC. The assets/ directory is served publicly by GitHub Pages: every
+  file in it becomes a downloadable URL. Only two kinds of file may live in assets/:
+  (1) media that a page actually displays (images, embedded videos/gifs), and (2) the
+  resume PDF (which is meant to be publicly downloadable). NOTHING ELSE. No source
+  documents, no PDFs (except the resume), no pptx/docx, no README copies, no raw or
+  superseded media. All such source material lives in sources/ at the project root,
+  which is gitignored and never served. Any agent that adds a file to assets/ must
+  confirm it is card-displayed media or the resume; if not, it goes in sources/. This
+  protects confidential material (e.g. the MoonRanger flight-software PDF) from being
+  served next to the copy that was carefully written to exclude it.
 - Do NOT build a contact page or any "get in touch" CTA. Links go quietly in the footer.
 - Do NOT use any framework or build tooling. Vanilla only.
 - Do NOT duplicate the quadruped writeup page into this site; link out to it.
@@ -113,6 +123,11 @@ Rules that always apply, regardless of which projects are listed:
 - Do NOT invent facts, metrics, or credentials. All content comes from Arnav's real work;
   if a detail is missing, leave a clear placeholder and flag it rather than fabricating.
 - Prose must sound like Arnav (see /voice once populated), not generic portfolio copy.
+- GLOBAL WRITING RULES (apply to ALL prose on the site — technical, casual, everything):
+  - NO em-dashes. Use commas, colons, parentheses, or separate sentences instead.
+  - Writing must sound natural and human, never robotic or AI-generated. No hollow
+    hype ("cutting-edge", "passionate", "leveraging"), no throat-clearing, no filler.
+  - Say the real thing plainly. Concrete over vague, specific over generic.
 - Prefer showing over telling: video, images, and real results over adjectives.
 - Keep the writing portfolio's presentation as polished as the technical sections.
 

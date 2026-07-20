@@ -1,0 +1,24 @@
+# Source material. Not for publishing.
+#
+# The rule is simple and it is not risk-based: sources/ holds the documents the site was
+# WRITTEN FROM, and those are private. Project READMEs, course reports, portfolio PDFs,
+# presentation decks, raw and superseded media. They are inputs. The site publishes what
+# was written from them, not them.
+#
+# So the test for a new file is not "is this sensitive." It is "does a card display this."
+# If a card displays it, it belongs in assets/. If it is something the writing drew on,
+# it belongs here, regardless of how harmless it looks.
+#
+# assets/ is served verbatim by GitHub Pages, so anything there is publicly downloadable
+# at a guessable URL. That is what makes the distinction load-bearing rather than tidy.
+# It matters most for the MoonRanger portfolio PDF, which contains flight software detail
+# the site's copy deliberately stays above, but that is a consequence of the rule, not the
+# reason for it.
+#
+# Keep source material here. Do not move it back into assets/.
+sources/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
