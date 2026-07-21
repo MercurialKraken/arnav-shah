@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projects | Arnav Shah</title>
+<meta name="description" content="Robotics projects by Arnav Shah: controls, autonomy, planning, and simulation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <div class="wrap wrap--full masthead__inner">
+    <a class="wordmark" href="index.html">Arnav Shah</a>
+    <nav class="nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="projects.html" aria-current="page">Projects</a>
+      <a href="writing.html">Writing</a>
+      <a href="resume.html">Resume</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <div class="wrap wrap--content page-head">
+    <h1>Projects</h1>
+    <p class="deck">Robotics work, from a driverless racecar to a lunar microrover.</p>
+  </div>
+
+  <div class="wrap wrap--content entries">
+
+    <!-- 1. cmr -->
+    <article class="entry">
+      <span class="label entry__eyebrow">Driverless Controls &amp; Vehicle Dynamics Engineer</span>
+      <h2 class="h3 entry__title">Carnegie Mellon Racing (Driverless)</h2>
+      <span class="tag entry__when">Aug 2025 &ndash; Present</span>
+
+      <figure class="media">
+        <video src="assets/cmr/race.mp4" width="720" height="1280" style="--ar: 720 / 1280"
+               muted autoplay loop playsinline preload="metadata"
+               aria-label="The Carnegie Mellon Racing driverless car running a track at speed."></video>
+      </figure>
+
+      <div class="prose entry__body">
+        <p>I work on controls for Carnegie Mellon Racing's driverless formula-style racecar, which took 1st place overall at Formula Hybrid+Electric 2026. The stack runs MPPI (Model Predictive Path Integral) control: each cycle it samples many random control sequences, rolls each one forward through a vehicle model, and commands a cost-weighted average of them. It replans from scratch every cycle, so it has no memory and inherits whatever the reference and the model hand it.</p>
+        <p>The car understeered, turning in late and running wide, and the cause was in the averaging itself. The aggressive early-turn-in rollouts a corner needs are a small minority of the samples, so averaging over the whole set dilutes them and the command comes out smoother and later than any good individual rollout. I averaged over only the top 2% by cost instead, which is a hard-threshold proxy for lowering the MPPI temperature: keep the best few, zero the tail. That bought roughly 1 to 2 m/s in both straight-line and cornering speed, at track speeds up to 9 m/s. The tradeoff is that discarding most of the samples makes the command noisier cycle to cycle, and pushing k smaller means chasing rollouts that scored well on a lucky noise draw. 2% was where the speed showed up before that began to bite.</p>
+        <p>A subtler problem was a correctness bug rather than a tuning one. Sampled actions get clipped at the hardware actuation limits, so the realized noise distribution is truncated, but the importance-sampling weights were still being computed from the unclipped density. Nothing clips in the interior of the action space, which is why the inconsistency only surfaced near the bounds, i.e. the regime racing actually lives in. In sim, the car drove off track there. Recomputing the weights consistently with the clipped distribution restored stable behavior at the limits.</p>
+        <p>The deployed stack rolls out a kinematic (slipless) bicycle model, which has no notion of a friction limit: it believes a given steering angle produces the same turn at any speed. I have a non-linear double-track model with Pacejka tire forces written to replace it, so that rollouts stay accurate when the car is sliding. It has not been tested on the car yet.</p>
+      </div>
+
+      <ul class="tags">
+        <li class="tag">MPPI</li>
+        <li class="tag">Controls</li>
+        <li class="tag">Vehicle Dynamics</li>
+        <li class="tag">Autonomous Racing</li>
+        <li class="tag">ROS 2</li>
+      </ul>
+    </article>
+
+    <!-- 2. onoe -->
+    <article class="entry">
+      <span class="label entry__eyebrow">Robot Learning Researcher, CMU RI (Prof. Jean Oh &amp; Prof. Jeff Ichnowski; Bosch AI collaboration)</span>
+      <h2 class="h3 entry__title">O-NOE Soft Robotic Gripper</h2>
+      <span class="tag entry__when">Apr 2025 &ndash; Present</span>
+
+      <figure class="media">
+        <video src="assets/onoe/cube-grasp-sim.mp4" width="1600" height="1200" style="--ar: 1600 / 1200"
+               muted autoplay loop playsinline preload="metadata"
+               aria-label="Simulated three-finger soft gripper closing on a deformable cube and lifting it."></video>
+      </figure>
+
+      <div class="prose entry__body">
+        <p>O-NOE is an open-source modular tendon-actuated soft finger, built so that researchers can assemble an n-finger hand out of a common part instead of fabricating a bespoke gripper for every experiment. I work on the simulation and learning side of it: a SOFA scene of a three-finger cable-driven gripper grasping and lifting a deformable cube, wrapped as a Gymnasium environment on top of SofaGym (Schegg et al., 2022).</p>
+        <p>Soft bodies are harder to simulate than rigid ones in a way that decides the shape of the whole project. A rigid arm's state is its joint angles and its kinematics are a closed-form chain of transforms. A soft finger has no joints; its shape is a continuum deformation field, so every step is an FEM solve, and contact deforms the very geometry generating it. That coupling is why soft hands grasp well and also why they are expensive to model. The consequence is that sample throughput, not algorithm choice, is the binding constraint here. The Gymnasium wrapper is what makes any of it tractable: once the physics scene presents reset and step, off-the-shelf implementations run against it unmodified and standard vectorized machinery can run several copies in parallel.</p>
+        <p>The largest single win was in reset. The default pattern is to tear the scene down and rebuild it each episode, which for a soft-body scene is a full scene-graph rebuild, and it leaked memory across resets. I made the reset persistent: the graph is built once and kept alive, and reset restores state on it. Domain randomization then had to obey the same rule, i.e. parameters like Young's modulus and friction are applied by mutating live components rather than triggering a rebuild. Training runs in fixed-size chunks with a process restart between them, which keeps memory bounded across multi-day runs and survives crashes; the curriculum stage is written to JSON so it also survives those restarts. The environment sustains 8000+ steps per hour.</p>
+        <p>Policies trained with PPO and SAC reach about 80% cube-lift success in simulation, though success is a function of how long the grasp has to hold, so I treat the hold-threshold sweep as the actual result rather than any single percentage. Transfer is the open piece. The retargeting pipeline is built: ArUco-based calibration from motor angle to tendon angle, with rotated force vectors to reconcile the simulated tendon anchors against where the cable really attaches, since the same pull under a different anchor geometry produces force in a different direction. It exports a trained policy as an open-loop action trace for replay. Nothing has been shown running on the physical hand yet.</p>
+      </div>
+
+      <figure class="media">
+        <img src="assets/onoe/hand-irl.jpg" width="1080" height="1920" style="--ar: 1080 / 1920" loading="lazy" decoding="async"
+             alt="The physical three-finger O-NOE gripper mounted on a robot arm over a workbench, its teal, red, and blue soft fingers standing above a small black cube, with tendon cables running up to the actuator housing.">
+        <figcaption class="meta media__caption">The physical three-finger hand.</figcaption>
+      </figure>
+
+      <ul class="tags">
+        <li class="tag">Soft Robotics</li>
+        <li class="tag">Reinforcement Learning</li>
+        <li class="tag">Sim-to-Real</li>
+        <li class="tag">SOFA</li>
+        <li class="tag">Gymnasium</li>
+        <li class="tag">PPO</li>
+        <li class="tag">SAC</li>
+      </ul>
+
+      <ul class="linkrow">
+        <li><a href="https://github.com/MercurialKraken/ONOE-SOFAGYM-RL" rel="noopener">Repository</a></li>
+      </ul>
+    </article>
+
+    <!-- 3. llm-multirobot -->
+    <article class="entry">
+      <span class="label entry__eyebrow">Course/research project with Sachet Korada. Arnav owned planning and execution</span>
+      <h2 class="h3 entry__title">LLM-Driven Multi-Robot Abstract Task Execution</h2>
+      <span class="tag entry__when">2025</span>
+
+      <figure class="media">
+        <video src="assets/llm-multirobot/floorplan1-sandwich-n4.mp4" width="608" height="608" style="--ar: 608 / 608"
+               muted autoplay loop playsinline preload="metadata"
+               aria-label="Four simulated robots moving through an AI2-THOR kitchen, carrying out a multi-step task."></video>
+      </figure>
+
+      <div class="prose entry__body">
+        <p>Give a robot team an instruction like "tidy this space" and the hard part is not decomposition, it is coordination. Language models break goals down well, but they emit a flat list of actions that says nothing about which steps compete for the same drawer or which ones can safely run at the same time, so asking one to generate actions directly tends to produce deadlock. So we did not ask it to coordinate. We asked it only for structure: a DAG of pick and place primitives where edges mean "must happen before" and anything left unconnected is provably independent, then handed that to classical planning, which is good at exactly the part the model is bad at. Sachet Korada built the LLM side, the DAG generation and the action primitive layer that turns a step into something executable. I owned the planner, the validation gate, and online recovery.</p>
+        <p>The motion planner is a four-tier cascade: Prioritized Planning first, then CBS, then PBS, then a BFS fallback with a runtime collision guard. The reasoning is that the cheap method works almost always and you cannot tell in advance when it will not, so you run it first and escalate only on failure, paying in proportion to actual difficulty rather than worst-case difficulty. None of the tiers were designed top down. Each one is scar tissue from a failure we hit. PP broke in two repeatable ways: snap-cell conflicts, where two agents want overlapping goal cells and the lower-priority one has no free wait position near its goal, and position-swap conflicts, two agents trying to pass in a narrow corridor, which no priority ordering fixes. The second is PP's incompleteness in concrete form, and it is why the next tier reasons over inter-agent constraints instead of committing to an order. BFS sits at the bottom because a plan always has to come back; the system degrades in quality rather than stalling.</p>
+        <p>The result I trust most is also the one that undercuts the framing. Across all 36 trials and 1,601 planning calls, PP resolved 80.4% on its own, and 97 to 100% at three agents or fewer. CBS and PBS together handled 15 calls. The expensive tiers essentially never ran, partly for an unflattering reason the paper states plainly: the dense, high-contention situations where PP fails are the same ones where CBS is too slow to be worth running, so the system tends to skip the middle and land on BFS. The cheap tier being enough is the design being validated. The middle tiers pulling less weight than "four-tier" suggests is the honest reading of the same table.</p>
+        <p>Validation is the gate between a model's guess and something a planner will try to run: five strict checks that reject and trigger regeneration, plus two auto-repairs for LLM habits with unambiguous fixes, like a place with no matching pick. Recovery handles the other failure mode, where planning is correct and the place still fails because the receptacle is full or blocked, by injecting a new task into the same DAG targeting the next receptacle in a chain precomputed at scene init. The scheduler never learns that recovery happened. The completion numbers are where that becomes visible, and they only mean something as a pair: mean strict completion, i.e. the object went exactly where the plan said, was 83.8%, while 34 of 36 trials reached 100% lenient, i.e. every object ended up somewhere sensible. The distance between those two numbers is the recovery layer.</p>
+        <p>All of this is AI2-THOR, simulation only, on a single random seed, so none of these figures carry variance.</p>
+      </div>
+
+      <ul class="tags">
+        <li class="tag">Multi-Agent Planning</li>
+        <li class="tag">LLM</li>
+        <li class="tag">MAPF</li>
+        <li class="tag">CBS</li>
+        <li class="tag">PBS</li>
+        <li class="tag">AI2-THOR</li>
+        <li class="tag">Python</li>
+      </ul>
+
+      <ul class="linkrow">
+        <li><a href="https://github.com/MercurialKraken/Multi-Robot-Abstract-Task-Solver-16891-Project" rel="noopener">Repository</a></li>
+      </ul>
+    </article>
+
+    <!-- 4. quadruped -->
+    <article class="entry">
+      <span class="label entry__eyebrow">Course/research project (16-299 final)</span>
+      <h2 class="h3 entry__title">Flow-Matched Action Regularization for Quadruped Locomotion</h2>
+      <span class="tag entry__when">Spring 2026</span>
+
+      <figure class="media">
+        <video src="assets/quadruped/push-recovery.mp4" width="1280" height="720" style="--ar: 1280 / 720"
+               muted autoplay loop playsinline preload="metadata"
+               aria-label="A simulated Unitree Go1 quadruped absorbing a lateral push and recovering its footing."></video>
+      </figure>
+
+      <div class="prose entry__body">
+        <p>PPO trained in Isaac Sim gets a Unitree Go1 walking, but nothing in a per-step reward prefers a smooth command sequence over a twitchy one, so the actions chatter between control steps. High-frequency content in the command is where actuator wear and sim-to-real trouble live. Both standard fixes cost something: an action-rate penalty is a single scalar traded off against the task reward, and a causal low-pass filter at deployment is task-blind. The filter arm came out worse than doing nothing, 56.25% falls against 50.00% raw, since it blunts the sharp hip corrections that catch a push.</p>
+        <p>This was a three-person project with Paul Colombo and Jack Gerdsen. Rather than penalize bad actions, we trained a state-conditioned velocity field that moves raw PPO actions toward targets found by short-horizon shooting, i.e. candidate action sequences rolled forward through the simulator and scored on tracking, jerk, energy, and stability. Those targets encode which actions lead to good short-term physical outcomes, which is information a filter cannot have. On 50 to 500 N lateral pushes the refined policy fell 3.75% of the time, the best of nine variants tested, with roughly 19% less high-frequency action energy. Refinement costs about 6 ms inside a 20 ms control step, i.e. affordable rather than free. All of it is in simulation. The full writeup has the ablation.</p>
+      </div>
+
+      <ul class="tags">
+        <li class="tag">Quadruped</li>
+        <li class="tag">Reinforcement Learning</li>
+        <li class="tag">Flow Matching</li>
+        <li class="tag">Locomotion</li>
+        <li class="tag">Isaac Sim</li>
+        <li class="tag">Unitree Go1</li>
+        <li class="tag">PyTorch</li>
+      </ul>
+
+      <ul class="linkrow">
+        <li><a href="https://github.com/MercurialKraken/16299-final-project-quadruped-regularisation" rel="noopener">Repository</a></li>
+        <li><a href="https://mercurialkraken.github.io/16299-final-project-quadruped-regularisation/" rel="noopener">Full writeup</a></li>
+      </ul>
+    </article>
+
+    <!-- 5. moonranger -->
+    <article class="entry">
+      <span class="label entry__eyebrow">Autonomous Systems Engineer, Autonomy Team (Profs. Red Whittaker &amp; Heather Jones); NASA Ames &amp; Astrobotic collaboration</span>
+      <h2 class="h3 entry__title">MoonRanger Microrover</h2>
+      <span class="tag entry__when">Jan 2025 &ndash; May 2025</span>
+
+      <figure class="media">
+        <img src="assets/moonranger/rover-render.jpg" width="2560" height="1439" style="--ar: 2560 / 1439" loading="lazy" decoding="async"
+             alt="Concept render of the four-wheeled MoonRanger microrover on grey lunar terrain, with Earth low on the black horizon.">
+        <figcaption class="meta media__caption">MoonRanger mission concept render. Image: Carnegie Mellon University / Astrobotic.</figcaption>
+      </figure>
+
+      <div class="prose entry__body">
+        <p>MoonRanger is a lunar microrover headed for the south pole in 2029, built at CMU with NASA Ames and Astrobotic under Prof. Red Whittaker. I worked on one component of the flight software: the data storage application, which records messages off the software bus as binary files. It is the rover's only persistent record of itself, so with it disabled the rover drives fine and nothing about the drive can be recovered on Earth.</p>
+        <p>It was disabled, because enabling it leaked memory and aborted with a SIGABRT from inside the allocator. It would not reproduce locally, where a container has none of the rover's hardware, and it would not reproduce on the test rover either. The software team could not trigger it, so we concluded the crash had gone away and re-enabled the application. It then crashed during an ordinary autonomy test session. Dr. Heather Jones and the team had pointed at dynamic allocation as the likely culprit, and that is where it was: a heap allocation while constructing a filename. I rewrote it in place on the stack.</p>
+        <p>Malloc is a genuine hazard in flight software rather than a style objection. Allocation cost depends on heap state, fragmentation accumulates across an unattended mission until an allocation fails with free memory to spare, and the failure is history-dependent, i.e. it appears under one sequence of operations and not under your reproduction attempt, which is the shape this one had. A fixed stack buffer's worst case is visible in the source. The rewrite ran forty minutes continuous without crashing and went into the main flight code, which removes the class of fault without establishing what the allocator was doing.</p>
+        <p>Telemetry files were named by sequential count, so the ground had to pull a full listing to find anything, and on bandwidth-tight missions that listing alone has eaten most of the allocation. I measured the rollover rate (a file closes at 2MB, about one every four and a half minutes, so 2000+ across a seven-day mission) and renamed files by timestamp, so an hour-filtered request would return 13 or 14 of them instead of the whole list. Would: the ground-side time-filtered request path was not built yet, and onboard time sync was unimplemented, so the clock ran from a default epoch.</p>
+      </div>
+
+      <ul class="tags">
+        <li class="tag">Space Robotics</li>
+        <li class="tag">Autonomy</li>
+        <li class="tag">NASA cFS</li>
+        <li class="tag">CCSDS</li>
+        <li class="tag">C</li>
+        <li class="tag">Python</li>
+      </ul>
+
+      <ul class="linkrow">
+        <li><a href="https://labs.ri.cmu.edu/moonranger/" rel="noopener">Mission site</a></li>
+      </ul>
+    </article>
+
+    <!-- 6. drone-mppi -->
+    <article class="entry">
+      <span class="label entry__eyebrow">Course/research project</span>
+      <h2 class="h3 entry__title">MPPI Drone Racing Controller</h2>
+      <span class="tag entry__when">2025</span>
+
+      <figure class="media">
+        <video src="assets/drone-mppi/fastest-run-sim.mp4" width="1302" height="1080" style="--ar: 1302 / 1080"
+               muted autoplay loop playsinline preload="metadata"
+               aria-label="A simulated quadrotor flying a procedural 3D race track past spherical obstacles."></video>
+      </figure>
+
+      <div class="prose entry__body">
+        <p>A course project with Ben Gu and Emily Newman: fly a quadrotor through a procedural 3D race track, roughly 115 m of spline centerline with spherical obstacles, staying inside a tube around the racing line. The argument for MPPI here was specific rather than general. Collision avoidance makes the cost function non-smooth, i.e. there is no clean gradient to descend, and real-time control wants parallelism more than it wants iterative solving.</p>
+        <p>Most of the real work turned out to sit in the forward model rather than in the controller. The clearest case is the motors. If the model lets rotors spin down as fast as they spin up, the sampler proposes control sequences that decelerate instantly, and those rollouts score well because nothing forbids them. Giving spin-up and spin-down separate time constants closes that gap. It is a failure mode particular to sampling-based methods: the optimizer will find whatever the model permits, so the fix belongs in the model. Same reasoning behind renormalizing the attitude quaternion every integration step, since a quaternion only represents a rotation while it is unit-norm and integration nudges it off the unit sphere, after which every cost computed downstream of attitude is meaningless.</p>
+        <p>I separately rewrote the controller as a standalone batched C++ implementation, holding all rollout states in one Eigen matrix so a dynamics step is a few large operations instead of many small ones.</p>
+        <p>It flies the track at simulated speeds over 20 m/s, but not cleanly. Acceleration and jerk vary considerably, motor RPM changes abruptly, and the raceline hugs the tube boundary instead of sitting inside it. Collision handling is a cost penalty rather than a verified geometric check. This is simulation only, where the model used for rollouts and the model used for the plant are the same model.</p>
+      </div>
+
+      <ul class="tags">
+        <li class="tag">MPPI</li>
+        <li class="tag">Quadrotor</li>
+        <li class="tag">Sampling-Based MPC</li>
+        <li class="tag">C++</li>
+        <li class="tag">Python</li>
+      </ul>
+
+      <ul class="linkrow">
+        <li><a href="https://github.com/MercurialKraken/mppi-quadrotor-batch-cpp" rel="noopener">C++ repository</a></li>
+        <li><a href="https://github.com/BenGu0530/Mobile-Robot---MPPI-Based-Autonomous-Drone-Racing" rel="noopener">Original Python repository</a></li>
+      </ul>
+    </article>
+
+    <!-- 7. antenna -->
+    <article class="entry">
+      <span class="label entry__eyebrow">Personal/research project</span>
+      <h2 class="h3 entry__title">Bayesian Optimization for Antenna Geometry</h2>
+      <span class="tag entry__when">2025</span>
+
+      <figure class="media media--plate">
+        <img src="assets/antenna/gain-plot.png" width="488" height="389" style="--ar: 488 / 389" loading="lazy" decoding="async"
+             alt="Three-dimensional radiation pattern surface with narrow dark red lobes radiating from a central point, beside a vertical colour bar labelled Gain.">
+        <figcaption class="meta media__caption">Three-dimensional radiation pattern from the NEC solve, with gain on the colour axis.</figcaption>
+      </figure>
+
+      <div class="prose entry__body">
+        <p>Each candidate geometry costs a full method-of-moments solve in NEC (via PyNEC) and returns a single number, no gradients and no structure, which is the regime Bayesian optimization exists for. I wrote the whole stack in NumPy instead of calling a BO library: a Gaussian process with a squared-exponential kernel, no hyperparameter fitting and no noise term, covariance inverted directly; an acquisition function blending probability of improvement with posterior variance, annealed by 0.85 per iteration so it hands off from exploring to exploiting; and a hand-written gradient-ascent optimizer over that acquisition using finite-difference gradients with random restarts.</p>
+        <p>Building it myself surfaced a failure a library would have hidden behind a default jitter term. With no noise term, the covariance goes singular as soon as two samples nearly coincide, which is exactly what a converging loop proposes. The guard rejects any point landing too close to an existing sample and substitutes a fresh random geometry.</p>
+        <p>The problem was 3 chained wire segments, 9 design variables, 5 GHz, 26 evaluations (1 random initialization plus 25 iterations), scored by a hand-weighted sum of mean gain, a matching proxy, and a reactance penalty. The winning design reports 30.23 dB peak and 16.48 dB mean gain, with an input impedance of 0.217 + j14.97 ohms, i.e. nearly all power reflects at the feed. Gain in the tens of dB dominates a match term bounded between 0 and 1, so the optimizer bought directivity and paid for it entirely in matching. It did what it was asked to do and returned an antenna nobody could use. All simulated. Nothing was built.</p>
+      </div>
+
+      <ul class="tags">
+        <li class="tag">Bayesian Optimization</li>
+        <li class="tag">Gaussian Processes</li>
+        <li class="tag">Antenna Design</li>
+        <li class="tag">NEC</li>
+        <li class="tag">Python</li>
+      </ul>
+
+      <ul class="linkrow">
+        <li><a href="https://github.com/MercurialKraken/Antenna-Bayesian-Optimization" rel="noopener">Repository</a></li>
+      </ul>
+    </article>
+
+    <!-- 8. first -->
+    <article class="entry">
+      <span class="label entry__eyebrow">Team Captain, Mumbai, India</span>
+      <h2 class="h3 entry__title">FIRST Robotics Competition, Team #7539 Elev8</h2>
+      <span class="tag entry__when">May 2021 &ndash; May 2024</span>
+
+      <figure class="media">
+        <img src="assets/first/hero.jpg" width="592" height="759" style="--ar: 592 / 759" loading="lazy" decoding="async"
+             alt="The Kohinoor competition robot on a cart at an FRC event, arm extended upward, team number 7539 in white on its red bumper, with the pit area and other teams behind it.">
+      </figure>
+
+      <div class="prose entry__body">
+        <p>I was captain of Elev8, FRC team 7539 out of Mumbai, a 60-student team, for three years. Our first season back after COVID had nobody on the roster who had ever competed, so the arc across three robots is the actual story: better every year, and I can point at where.</p>
+        <p>Kohinoor, the 2022-23 robot, is the one I would defend. Everyone else played that year's game as pick-and-place, and we built a compliant intake and launcher instead. That bought two things: the intake and the shooter failed independently, so losing one did not end the match, and launching meant we were not driving to every scoring location the way the rest of the field had to. In the autonomous period our sensor readings were noisy enough that the robot tracked its trajectory badly, so we stopped trusting any single one of them and fused vision against odometry with a Kalman filter. We won the FRC Autonomous Award. I drove the robot as well, so the semi-automation was tooling I wrote for myself.</p>
+        <p>Swerve, trajectory following, sensor fusion: same categories, less forgiving hardware now.</p>
+      </div>
+
+      <ul class="tags">
+        <li class="tag">FRC</li>
+        <li class="tag">Leadership</li>
+        <li class="tag">Trajectory Generation</li>
+        <li class="tag">EKF</li>
+        <li class="tag">Controls</li>
+      </ul>
+    </article>
+
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap wrap--full site-footer__inner">
+    <a href="mailto:arnavsha@andrew.cmu.edu">arnavsha@andrew.cmu.edu</a>
+    <a href="https://www.linkedin.com/in/arnav-a-shah/" rel="noopener">LinkedIn</a>
+    <a href="https://github.com/MercurialKraken" rel="noopener">GitHub</a>
+  </div>
+</footer>
+
+</body>
+</html>

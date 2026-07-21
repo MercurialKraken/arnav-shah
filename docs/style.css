@@ -1,0 +1,761 @@
+/* ==========================================================================
+   Arnav Shah — style.css
+   Single source of visual truth for every page. Implements design/tokens.md.
+   Do not introduce colors, fonts, shadows, or radii that are not defined here.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens (design/tokens.md §9, verbatim)
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* Type — families */
+  --font-serif: "Newsreader", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --font-sans:  "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:  "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace;
+
+  /* Type — scale */
+  --fs-display: clamp(3rem, 7vw, 4.5rem);
+  --fs-h1:      clamp(2.125rem, 5vw, 3rem);
+  --fs-h2:      clamp(1.5rem, 3vw, 1.75rem);
+  --fs-h3:      1.25rem;
+  --fs-deck:    clamp(1.25rem, 2.4vw, 1.375rem);
+  --fs-prose:   1.125rem;
+  --fs-ui:      1rem;
+  --fs-nav:     0.9375rem;
+  --fs-meta:    0.875rem;
+  --fs-tag:     0.75rem;   /* mono — technical metadata only */
+  --fs-label:   0.75rem;
+
+  /* Type — line-heights */
+  --lh-display: 1.04;
+  --lh-h1:      1.12;
+  --lh-h2:      1.22;
+  --lh-h3:      1.32;
+  --lh-deck:    1.5;
+  --lh-prose:   1.65;
+  --lh-ui:      1.55;
+  --lh-meta:    1.45;
+
+  /* Type — tracking */
+  --ls-display: -0.022em;
+  --ls-h1:      -0.016em;
+  --ls-h2:      -0.01em;
+  --ls-h3:      -0.005em;
+  --ls-tag:      0.01em;
+  --ls-label:    0.1em;
+
+  /* Color — warm paper stock. All ratios measured against --paper. */
+  --paper:        #F3EDE1;  /* ground                                    */
+  --paper-sunk:   #EBE3D2;  /* 1.09:1 vs paper                           */
+  --ink:          #16130F;  /* 15.9:1  AAA                               */
+  --ink-soft:     #4F483D;  /*  7.74:1 AAA                               */
+  --ink-faint:    #6E6659;  /*  4.86:1 large/UI only                     */
+  --rule:         #DCD4C2;  /* 1.27:1 vs paper                           */
+  --rule-strong:  #C7BCA4;  /* 1.61:1 vs paper                           */
+  --accent:       #8C2F23;  /*  7.08:1 AAA — links, deck rule, active nav */
+  --accent-hover: #6E2419;  /*  9.34:1                                   */
+  --focus:        #8C2F23;
+
+  /* Spacing */
+  --sp-1:  0.25rem;  --sp-2:  0.5rem;   --sp-3:  0.75rem;  --sp-4: 1rem;
+  --sp-5:  1.5rem;   --sp-6:  2rem;     --sp-7:  3rem;     --sp-8: 4rem;
+  --sp-9:  6rem;     --sp-10: 8rem;     --sp-11: 10rem;    --sp-12: 12rem;
+
+  /* Layout */
+  --measure-prose: 66ch;
+  --width-content: 46rem;
+  --width-wide:    68rem;
+  --width-full:    78rem;
+  --gutter:        1.5rem;
+  --gutter-lg:     2.5rem;
+  --radius:        2px;
+  --hairline:      1px solid var(--rule);
+
+  /* Derived, not new design values.
+     Section rhythm per §8: --sp-8 below 48rem, --sp-9 at and above.
+     Media cap: see §"Media" below for the reasoning. */
+  --section-gap:  var(--sp-8);
+  /* Shared media height. Every media item on a page renders at this height and
+     takes whatever width its own aspect ratio implies.
+     The value is bounded by the widest ratio in the set. The content column is
+     46rem with a 1.5rem gutter each side, so on a 360px viewport the usable width
+     is about 312px, and the widest media (16:9, ratio 1.78) would need 370px at
+     13rem tall. Those items therefore clamp to the column and render shorter.
+     That tradeoff is deliberate: sizing the shared height so even 16:9 fits on a
+     phone would drop it to about 11rem, at which point the portrait items become
+     roughly 99px wide, which is too small to read. */
+  --media-h:  13rem;
+
+  /* THE ENTRY COLUMN, and the media height derived from it.
+
+     The shared text column inside a project entry. Root-relative on purpose (see
+     the note on `.entry > *`): every text block resolves it to the same pixels,
+     which is what gives an entry one left edge and one centre line.
+
+     It is also, by design, the width of the WIDEST media on the page. The media
+     system fixes a shared height and lets width follow each item's ratio, so the
+     widest item is whichever has the largest ratio, currently 16:9 (the MoonRanger
+     render and the quadruped clip). Sizing the text column to that width means the
+     text and the widest media share both edges, and everything narrower is centred
+     inside them. One column, one right edge.
+
+     So --media-h is DERIVED, not chosen: it is whatever height makes a 16:9 item
+     exactly --entry-col wide. Change --entry-col and the media follows. Do not set
+     the two independently, or the relationship silently breaks.
+
+     Why 38rem and not the full 46rem column: prose must never exceed 66ch (tokens
+     section 10). At the prose size 66ch lands near 618px, so 38rem (608px) sits
+     just inside it. The usable column is 656px, so this also leaves the text a
+     little air rather than running edge to edge. */
+  --media-widest-ar: 1.779;   /* 2560/1439, the largest ratio in assets/ */
+  --entry-col: 38rem;
+}
+
+@media (min-width: 48rem) {
+  :root {
+    --gutter: var(--gutter-lg);
+    --section-gap: var(--sp-9);
+    /* Derived, not chosen: the height at which a 16:9 item is exactly --entry-col
+       wide, so the widest media and the text column share the same edges. Every
+       other item is shorter in width and centred inside that same column. Nothing
+       clamps at this breakpoint or above. */
+    --media-h: calc(var(--entry-col) / var(--media-widest-ar));
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. Reset / base
+   -------------------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-optical-sizing: auto;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--fs-prose);
+  line-height: var(--lh-prose);
+  font-variant-numeric: oldstyle-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Sans and mono contexts reset to lining figures */
+nav, footer, .meta, .label, .ui, .tag { font-variant-numeric: lining-nums; }
+
+img, video, object, iframe { max-width: 100%; }
+
+h1, h2, h3, p, ul, ol, figure { margin: 0; }
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   3. Type primitives
+   -------------------------------------------------------------------------- */
+
+.display {
+  font-family: var(--font-serif);
+  font-size: var(--fs-display);
+  font-weight: 400;
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+}
+
+h1, .h1 {
+  font-family: var(--font-serif);
+  font-size: var(--fs-h1);
+  font-weight: 400;
+  line-height: var(--lh-h1);
+  letter-spacing: var(--ls-h1);
+}
+
+h2, .h2 {
+  font-family: var(--font-serif);
+  font-size: var(--fs-h2);
+  font-weight: 500;
+  line-height: var(--lh-h2);
+  letter-spacing: var(--ls-h2);
+}
+
+h3, .h3 {
+  font-family: var(--font-serif);
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  line-height: var(--lh-h3);
+  letter-spacing: var(--ls-h3);
+}
+
+/* The Italic Deck — the one signature move. One per page, one line. (§6) */
+.deck {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: var(--fs-deck);
+  line-height: var(--lh-deck);
+  color: var(--ink-soft);
+  max-width: 34rem;
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-5);
+  position: relative;
+}
+
+.deck::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2.5rem;
+  height: 1px;
+  background: var(--accent);
+}
+
+.prose {
+  max-width: var(--measure-prose);
+}
+
+.prose p + p { margin-top: var(--sp-4); }
+
+.prose em, .prose i { font-style: italic; }
+
+.meta {
+  font-family: var(--font-sans);
+  font-size: var(--fs-meta);
+  font-weight: 400;
+  line-height: var(--lh-meta);
+  color: var(--ink-soft);
+}
+
+.label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.ui {
+  font-family: var(--font-sans);
+  font-size: var(--fs-ui);
+  font-weight: 400;
+  line-height: var(--lh-ui);
+}
+
+/* Technical metadata — the only place mono appears (§1.1, §10) */
+.tag {
+  font-family: var(--font-mono);
+  font-size: var(--fs-tag);
+  font-weight: 400;
+  line-height: var(--lh-meta);
+  letter-spacing: var(--ls-tag);
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   4. Links (§5)
+   -------------------------------------------------------------------------- */
+
+/* Links in prose: oxblood, no underline at rest, underline on hover/focus. */
+.prose a,
+.link-prose {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.prose a:hover, .prose a:focus-visible,
+.link-prose:hover, .link-prose:focus-visible {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+/* Links as UI: sans, ink, hover to accent, never underlined. */
+.link-ui {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.link-ui:hover, .link-ui:focus-visible { color: var(--accent); }
+
+/* --------------------------------------------------------------------------
+   5. Layout containers
+   -------------------------------------------------------------------------- */
+
+.wrap {
+  width: 100%;
+  max-width: var(--width-wide);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.wrap--full { max-width: var(--width-full); }
+.wrap--content { max-width: var(--width-content); }
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-meta);
+  background: var(--paper);
+  color: var(--accent);
+  padding: var(--sp-3) var(--sp-4);
+  z-index: 10;
+}
+
+.skip-link:focus {
+  left: var(--gutter);
+  top: var(--sp-2);
+}
+
+/* --------------------------------------------------------------------------
+   6. Masthead / nav (§7) — identical on all four pages
+   -------------------------------------------------------------------------- */
+
+.masthead {
+  border-bottom: var(--hairline);
+}
+
+.masthead__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  padding-block: var(--sp-5);
+}
+
+.wordmark {
+  font-family: var(--font-serif);
+  font-size: var(--fs-h3);
+  font-weight: 500;
+  letter-spacing: var(--ls-h3);
+  line-height: 1;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.wordmark:hover, .wordmark:focus-visible { color: var(--accent); }
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-6);
+}
+
+.nav a {
+  font-family: var(--font-sans);
+  font-size: var(--fs-nav);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  text-decoration: none;
+  /* 0.4em below the baseline, per §7 */
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid transparent;
+}
+
+.nav a:hover, .nav a:focus-visible { color: var(--accent); }
+
+.nav a[aria-current="page"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Below 48rem: wordmark on its own line, links wrap beneath at --sp-5 gap (§8) */
+@media (max-width: 47.999rem) {
+  .masthead__inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-5);
+  }
+  .nav { gap: var(--sp-5); }
+  /* Touch targets ≥ 44px (§5) */
+  .nav a { padding-top: 0.75rem; padding-bottom: calc(0.75rem + 0.4em); }
+}
+
+/* --------------------------------------------------------------------------
+   7. Page head
+   -------------------------------------------------------------------------- */
+
+.page-head {
+  padding-top: var(--sp-8);
+  padding-bottom: var(--section-gap);
+}
+
+@media (min-width: 64rem) {
+  .page-head { padding-top: var(--sp-10); }
+}
+
+/* Home only. Tokens §8 gives the hero more top space than a page head:
+   --sp-8 below 48rem, --sp-11 at 64rem. Same element, one token swapped. */
+@media (min-width: 64rem) {
+  .page-head--hero { padding-top: var(--sp-11); }
+}
+
+/* --------------------------------------------------------------------------
+   8. Project entries (§7) — listings, not cards
+   -------------------------------------------------------------------------- */
+
+.entries, .pieces { padding-bottom: var(--section-gap); }
+
+.entry {
+  border-top: var(--hairline);
+  padding-top: var(--sp-7);
+  padding-bottom: var(--sp-7);
+}
+
+.entry:last-child { padding-bottom: 0; }
+
+/* ONE CENTRED AXIS.
+   Every block inside an entry is capped at the SAME width and centred, so the
+   text has a single constant left edge and a single constant centre line. Media
+   is then centred on that same line (section 9), which is what makes media and
+   text read as one column instead of two things that happen to share an x.
+
+   The cap MUST be a rem value, not --measure-prose. That token is 66ch, and ch is
+   the width of "0" in each element's OWN font, so capping children with it gives
+   every child a different width: the serif title resolves 66ch near 686px and
+   fills the column, while the 12px sans eyebrow resolves it near 475px and, being
+   centred, lands about 90px further in. That is what knocked the eyebrow and date
+   out of line with the title. A rem value is root-relative, so every child
+   resolves it identically.
+
+   36rem sits comfortably inside 66ch at the prose font, so body text still honours
+   the measure rule in section 10 of the tokens.
+
+   Media is the deliberate exception and may be wider than the text, because a 16:9
+   clip capped at the text column would be needlessly small. It stays centred on
+   the same axis, so the extra width does not break the alignment. */
+.entry > * {
+  max-width: var(--entry-col);
+  margin-inline: auto;
+}
+
+.entry > .media { max-width: 100%; }
+
+.entry__eyebrow {
+  display: block;
+  margin-bottom: var(--sp-3);
+}
+
+.entry__title { margin-bottom: var(--sp-2); }
+
+.entry__title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.entry__title a:hover, .entry__title a:focus-visible { color: var(--accent); }
+
+.entry__when {
+  display: block;
+  margin-bottom: var(--sp-5);
+}
+
+.entry__body { margin-top: var(--sp-5); }
+
+/* Tech tags — boxed, mono, wrapping freely (§7) */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+  padding: 0;
+  list-style: none;
+}
+
+.tags li {
+  border: var(--hairline);
+  border-radius: var(--radius);
+  padding: var(--sp-1) var(--sp-3);
+}
+
+/* Link row */
+.linkrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  margin-top: var(--sp-5);
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-sans);
+  font-size: var(--fs-meta);
+  line-height: var(--lh-meta);
+}
+
+.linkrow a {
+  display: inline-block;
+  color: var(--ink);
+  text-decoration: none;
+  /* keeps the touch target near 44px without changing the visual rhythm */
+  padding-block: var(--sp-3);
+  margin-block: calc(var(--sp-3) * -1);
+}
+
+.linkrow a:hover, .linkrow a:focus-visible { color: var(--accent); }
+
+.linkrow .is-missing {
+  color: var(--ink-faint);
+  font-style: normal;
+}
+
+/* --------------------------------------------------------------------------
+   9. Media
+   --------------------------------------------------------------------------
+   Natural aspect ratios, always. Nothing is cropped and nothing is distorted:
+   there is no object-fit: cover or fill anywhere in this file.
+
+   THE RULE: one shared height across every media item on the page, each item's
+   own aspect ratio preserved, width derived from that ratio. Wide media is
+   physically wider on the page and tall media is narrower. Both sit in the same
+   content column as the text, so the page reads as a single aligned spine.
+
+   Ratio is declared per item as an inline `--ar: W / H` from the file's real
+   dimensions, so layout is correct on the first pass with no reflow as media
+   loads. The width/height attributes stay on the elements for the same reason,
+   and as a no-CSS fallback.
+
+   The one exception to uniform height: an item whose derived width would exceed
+   the column is clamped to the column and renders shorter. Ratio is still
+   preserved. Below 48rem this affects the two 16:9 items (moonranger's render
+   and the quadruped clip). At 48rem and above nothing clamps.
+   -------------------------------------------------------------------------- */
+
+.media {
+  margin-top: var(--sp-5);
+  margin-bottom: var(--sp-5);
+
+  /* Centre the media, and its caption, on the column's centre line. Because every
+     text block in an entry is also centred on that line, media of any width sits
+     on the same axis as the prose above and below it. Widths differ from item to
+     item by design (uniform height, ratio preserved), so a shared centre is the
+     only alignment that can hold across the whole page. A shared left edge cannot:
+     it would make each item look nudged by a different amount. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* The caption stays readable rather than stretching under wide media, and is
+   centred as a block so it sits on the same axis. Its text is still left-aligned. */
+.media img,
+.media video {
+  display: block;
+
+  /* Ratio is declared explicitly per item via an inline `--ar: W / H`, taken from
+     the file's real pixel dimensions. Declaring it rather than inferring it means
+     the box is correct on the very first layout pass, before any image decodes or
+     any video metadata arrives, so nothing reflows and <video> never falls back to
+     its 300x150 default. */
+  aspect-ratio: var(--ar);
+
+  /* UNIFORM HEIGHT, RATIO PRESERVED, WIDTH FOLLOWS.
+     height is the fixed dimension and width is derived from the ratio, so every
+     item on the page shares a height and each one is as wide as its own ratio
+     makes it. This is the inverse of the usual pattern and it is deliberate:
+     setting width and letting height follow is what squashed the portrait photo,
+     because the width attribute acts as a presentational hint, so width stayed
+     definite while max-height clamped the height independently of the ratio. */
+  height: var(--media-h);
+  width: auto;
+
+  /* If the derived width would exceed the shared content column, the column wins.
+     For a replaced element with a definite ratio, clamping the used width makes
+     the browser recompute the height from that same ratio (CSS2.1 10.4), so such
+     an item simply renders shorter than the shared height. It is never squashed
+     and never breaks the column. */
+  max-width: 100%;
+
+  /* Belt and braces. If any future rule ever forces a box whose ratio disagrees
+     with the media's own, contain letterboxes the pixels rather than stretching
+     them. Never use cover or fill here: both distort or crop, and the media system
+     is explicitly no-crop. */
+  object-fit: contain;
+
+  border-radius: var(--radius);
+  background: transparent;
+}
+
+/* Capped at the shared entry column, not at 66ch: the caption is set in the sans
+   face, so a ch-based cap would resolve to a different pixel width than the serif
+   text above it and the caption would sit on its own axis. Full width of that cap
+   so the block centres with everything else; its own text stays left-aligned. */
+.media__caption {
+  margin-top: var(--sp-3);
+  max-width: var(--entry-col);
+  width: 100%;
+}
+
+/* A figure whose source image carries its own light background (plots exported
+   from matplotlib). The hairline gives the white plate a defined edge so it
+   reads as a printed figure rather than as a light leak in the paper ground.
+   No fill, no shadow, no filter: the plot's own pixels are not altered. */
+.media--plate img {
+  /* stays border-box: content-box would push the frame past the column on a
+     narrow viewport, since max-width would then cap content rather than frame */
+  border: var(--hairline);
+  padding: var(--sp-4);
+}
+
+/* Missing-asset placeholder. Only rendered when a referenced file is absent. */
+.media--missing {
+  border: var(--hairline);
+  border-radius: var(--radius);
+  padding: var(--sp-6);
+  font-family: var(--font-sans);
+  font-size: var(--fs-meta);
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   10. Footer (§7) — identical on all four pages
+   -------------------------------------------------------------------------- */
+
+.site-footer {
+  border-top: 1px solid var(--rule-strong);
+  margin-top: var(--section-gap);
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  padding-block: var(--sp-7);
+  font-family: var(--font-sans);
+  font-size: var(--fs-meta);
+  line-height: var(--lh-meta);
+  color: var(--ink-soft);
+}
+
+.site-footer a {
+  color: var(--ink-soft);
+  text-decoration: none;
+  display: inline-block;
+  padding-block: var(--sp-3);
+  margin-block: calc(var(--sp-3) * -1);
+}
+
+.site-footer a:hover, .site-footer a:focus-visible { color: var(--accent); }
+
+.site-footer .is-missing { color: var(--ink-faint); }
+
+/* --------------------------------------------------------------------------
+   11. Resume viewer (§7) — defined here so the shared sheet serves every page
+   -------------------------------------------------------------------------- */
+
+.resume-download {
+  display: block;
+  text-align: right;
+  margin-bottom: var(--sp-4);
+  font-family: var(--font-sans);
+  font-size: var(--fs-meta);
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.resume-download:hover, .resume-download:focus-visible {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.resume-frame {
+  border: var(--hairline);
+  background: var(--paper-sunk);
+  padding: var(--sp-4);
+}
+
+.resume-frame object,
+.resume-frame iframe {
+  display: block;
+  width: 100%;
+  min-height: 85vh;
+  border: 0;
+}
+
+.resume-fallback { display: none; }
+
+/* PDF embeds are unreliable under 768px: collapse to a download link (§7, §8) */
+@media (max-width: 47.999rem) {
+  .resume-frame { display: none; }
+  /* the download link belongs TO the hidden viewer; the fallback carries its own */
+  .resume-download { display: none; }
+  .resume-fallback { display: block; }
+}
+
+/* --------------------------------------------------------------------------
+   12. Writing page (§7) — more air than projects, no mono anywhere
+   -------------------------------------------------------------------------- */
+
+.piece {
+  border-top: var(--hairline);
+  padding-top: var(--sp-8);
+  padding-bottom: var(--sp-8);
+}
+
+.piece:last-child { padding-bottom: 0; }
+
+.piece__title { margin-bottom: var(--sp-2); }
+
+.piece__title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.piece__title a:hover, .piece__title a:focus-visible { color: var(--accent); }
+
+/* Genre/date sits below the title, in sans, never mono. */
+.piece__meta { margin-bottom: var(--sp-5); }
+
+/* Full-text story pages: the story renders verbatim in the literary serif. */
+.story {
+  max-width: var(--measure-prose);
+}
+
+.story p + p { margin-top: var(--sp-4); }
+
+/* Byline on a full-text story page. Sans, per the chrome/prose split in §1.1.
+   The story pages carry no Italic Deck: there is no copy for one, and inventing
+   a line would mean characterizing the fiction, which is forbidden. The byline
+   occupies that slot instead. */
+.story__byline { margin-top: var(--sp-4); }
+
+/* Scene break. The source marks these with a *** line. Rendered as centred
+   type, NOT as an <hr> or a rule: §5 forbids ornamental rules, and a scene
+   break is a typographic mark rather than structure. No new colour or size,
+   only existing tokens. Specificity beats `.story p + p` so the tighter
+   paragraph rhythm does not apply to it. */
+.story .scene-break {
+  margin-top: var(--sp-7);
+  margin-bottom: var(--sp-7);
+  text-align: center;
+  color: var(--ink-soft);
+  line-height: 1;
+}
+
+/* --------------------------------------------------------------------------
+   13. Motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

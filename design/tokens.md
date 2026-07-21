@@ -218,6 +218,98 @@ Prose containers use `max-width: var(--measure-prose)` — the 66ch measure is w
 long serif text feel typeset rather than stretched. Wider elements (media, resume) opt
 out to `--width-wide`.
 
+### 4.1 The entry column, and why it is not `--measure-prose`
+
+Established while building `projects.html`. Every text block inside a project entry
+(eyebrow, title, date, prose, tags, links) is capped at the *same* width and centered,
+so an entry has one constant left edge and one constant centre line.
+
+```css
+--entry-col: 38rem;   /* 608px — the shared text column inside an entry */
+
+.entry > * { max-width: var(--entry-col); margin-inline: auto; }
+.entry > .media { max-width: 100%; }   /* media alone may exceed it */
+```
+
+**The cap must be a `rem` value. Do not use `--measure-prose` for it.** This was a real
+bug, and it is not obvious. `--measure-prose` is `66ch`, and `ch` resolves against *each
+element's own font*. Capping children with it gives every child a different width: the
+serif title resolves 66ch near 686px and fills the column, while the 12px sans eyebrow
+resolves it near 475px and, being centered, lands about 90px further in. The eyebrow and
+the date drifted out of line with the title, and the cause was invisible in the markup.
+
+`--measure-prose` stays correct for prose itself, where it is computed in the prose font
+and means what it says. It is simply wrong as a shared structural cap. Any element set in
+a different face (captions in sans, dates in mono) must use `--entry-col`.
+
+**Why 38rem.** Prose must never exceed 66ch (§10). At the prose size 66ch lands near
+618px, so 608px sits just inside it. The usable column is 656px, so this also leaves the
+text a little air rather than running edge to edge. If prose ever reads long, `--entry-col`
+is the single knob and the media resizes with it.
+
+### 4.2 The media system: uniform height, ratio preserved, width follows
+
+**Scope.** §4.1 and §4.2 describe the PROJECT LISTING treatment. They apply wherever
+`.entry` and `.media` are used, which today means `projects.html` only. They are opt-in
+by class, not global: the home, writing, and resume pages consume none of it and are free
+to treat their own media however suits them. Nothing here constrains a page that does not
+use those classes. The tokens live on `:root` so they are available, not so they are
+mandatory.
+
+The one thing that IS global is the prohibition: no cropping and no distortion anywhere on
+the site, on any page. `object-fit: cover` and `fill` are out everywhere. How a given page
+sizes its media is that page's business; mangling the pixels is nobody's.
+
+Within a project listing: all media renders at one shared height. Each item keeps its
+original aspect ratio, and *width follows from that ratio*. Wide media is physically wider
+on the page, tall media is narrower.
+
+```css
+.media img, .media video {
+  aspect-ratio: var(--ar);   /* declared inline per item, from real pixel dimensions */
+  height: var(--media-h);    /* the fixed dimension */
+  width: auto;               /* follows from the ratio */
+  max-width: 100%;           /* column wins; height recomputes, never squashes */
+  object-fit: contain;       /* never cover, never fill */
+}
+```
+
+**Set height and let width follow, never the reverse.** Doing it the usual way is what
+squashed a portrait photo: the `width`/`height` attributes on `<img>` act as
+presentational hints for the CSS `width` property, so width stayed *definite* while
+`max-height` clamped the height independently. Neither dimension was free to follow the
+ratio. Fixing the height and freeing the width inverts that correctly.
+
+**Declare the ratio, do not infer it.** Each element carries an inline `--ar: W / H` from
+the file's true pixel dimensions, so the box is correct on the first layout pass, before
+any image decodes or any video metadata arrives. Nothing reflows, and `<video>` never
+falls back to its 300x150 default. Keep the `width`/`height` attributes too, as the
+no-CSS fallback.
+
+**`--media-h` is derived, not chosen.** The widest item on a page is whichever has the
+largest aspect ratio. Size the shared height so that item is exactly `--entry-col` wide,
+and the text column and the widest media share both edges. Everything narrower is
+centered inside that same span. One column, one right edge.
+
+```css
+--media-widest-ar: 1.779;   /* the largest ratio in docs/assets/ (2560/1439) */
+--media-h: calc(var(--entry-col) / var(--media-widest-ar));
+```
+
+Do not set the two independently or the relationship silently breaks. If a new asset has
+a larger ratio than `--media-widest-ar`, update that token.
+
+**Centre, do not left-align.** Media is centred on the same axis as the text, via a flex
+column on the `<figure>`. Because widths vary by design, a shared left edge cannot hold
+across a page: each item would look nudged by a different amount. A shared centre is the
+only alignment that works with uniform height.
+
+**The one exception.** An item whose derived width would exceed the column clamps to the
+column and renders shorter than the shared height. Ratio is still preserved. Below 48rem
+this affects 16:9 items; at 48rem and above nothing clamps. Sizing the mobile height so
+even 16:9 fits would push it to about 11rem, at which point portrait items are roughly
+99px wide, which is too small to read. The clamp is the better trade.
+
 **Radii and shadows:** `--radius: 2px` for images/media only. **No box-shadows
 anywhere.** Depth is not part of this system; separation comes from whitespace and
 hairline rules.
@@ -307,12 +399,14 @@ CTA language. Quiet enough to be nearly missed.
 
 **Project entries.** Not cards — *listings*. Each is separated from the next by a top
 hairline and `--sp-7` of padding. Structure: sans `--fs-label` eyebrow (role/context)
-→ serif `--fs-h3` title → serif prose summary at `--measure-prose` → **mono `--fs-tag`
-row of tech tags** → sans `--fs-meta` row of links. Media (video/image/GIF) sits
-full-width of `--width-wide` at
-`--radius: 2px` with `--sp-5` above and below and an optional sans `--fs-meta` caption
-in `--ink-soft`. No hover lift, no scale transform; hovering the title shifts it to
-`--accent`.
+→ serif `--fs-h3` title → mono `--fs-tag` date → hero media → serif prose summary →
+**mono `--fs-tag` row of tech tags** → sans `--fs-meta` row of links.
+
+All of those blocks are capped at `--entry-col` and centered, per §4.1. Media follows the
+system in §4.2: shared height, natural ratio, width derived, centered on the same axis,
+`--radius: 2px`, `--sp-5` above and below, optional sans `--fs-meta` caption in
+`--ink-soft` (capped at `--entry-col`, not at 66ch, since it is set in the sans face).
+No hover lift, no scale transform; hovering the title shifts it to `--accent`.
 *Tech tags:* mono `--fs-tag` in `--ink-soft`, each in a `1px solid var(--rule)` box at
 `--radius: 2px` with `--sp-1`/`--sp-3` padding, `--sp-3` gap, wrapping freely. Boxed
 rather than bare so the tags read as a discrete data row and not as a caption. No fill,
@@ -421,7 +515,7 @@ Two breakpoints. More would be noise.
   --sp-9:  6rem;     --sp-10: 8rem;     --sp-11: 10rem;    --sp-12: 12rem;
 
   /* Layout */
-  --measure-prose: 66ch;
+  --measure-prose: 66ch;      /* PROSE ONLY. Never as a shared cap, see 4.1 */
   --width-content: 46rem;
   --width-wide:    68rem;
   --width-full:    78rem;
@@ -429,10 +523,21 @@ Two breakpoints. More would be noise.
   --gutter-lg:     2.5rem;
   --radius:        2px;
   --hairline:      1px solid var(--rule);
+
+  /* Entry column + media (4.1, 4.2). rem-based so every child resolves it
+     identically regardless of font. --media-h is derived from the other two. */
+  --entry-col:       38rem;
+  --media-widest-ar: 1.779;   /* largest ratio in docs/assets/ (2560/1439) */
+  --media-h:         13rem;   /* mobile; 16:9 clamps to the column here */
 }
 
 @media (min-width: 48rem) {
-  :root { --gutter: var(--gutter-lg); }
+  :root {
+    --gutter: var(--gutter-lg);
+    /* The height at which a 16:9 item is exactly --entry-col wide. Nothing
+       clamps at this breakpoint or above. */
+    --media-h: calc(var(--entry-col) / var(--media-widest-ar));
+  }
 }
 
 html {
@@ -476,6 +581,16 @@ nav, footer, .meta, .label, .ui, .tag { font-variant-numeric: lining-nums; }
       never writing, never titles, never nav or footer.
 - [ ] Exactly one Italic Deck per page, one line long.
 - [ ] Body prose never exceeds 66ch.
+- [ ] `--measure-prose` is used for PROSE ONLY, never as a shared structural cap.
+      It is a `ch` value and resolves differently in every font, which silently
+      knocks elements out of alignment. Shared caps use `--entry-col` (§4.1).
+- [ ] No crop and no distortion anywhere on the site. `object-fit: cover` and `fill`
+      appear nowhere, on any page. This one is global.
+- [ ] In project listings specifically: one shared media height, natural ratio, width
+      derived from ratio, centered on the text axis, never both dimensions pinned
+      (§4.2). Other page types set their own media treatment.
+- [ ] `--media-h` is derived from `--entry-col` and `--media-widest-ar`, never set
+      independently. A new asset with a larger ratio means updating that token.
 - [ ] Every interactive element has a visible focus ring.
 - [ ] Nav and footer byte-identical across all four pages.
 - [ ] `--paper` is `#F3EDE1`. If anything renders on `#FFF` or `#FBFAF7`, it's a bug.

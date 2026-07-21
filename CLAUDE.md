@@ -48,14 +48,27 @@ portfolio. It is a static site, hand-buildable, deployed to GitHub Pages.
   website (real page loads, shareable URLs such as `/writing`, `/projects`).
 - Must deploy cleanly to **GitHub Pages** as static files.
 - No build step required. A browser opening any `.html` file should just work.
-- File layout:
-  - `index.html` (Home/Landing)
-  - `projects.html`
-  - `writing.html`
-  - `resume.html`
-  - one shared `style.css` linked by every page (single source of visual truth)
-  - `script.js` only if needed
-  - assets (images, video, PDF) in an `assets/` folder
+- File layout. THE PUBLISHED SITE LIVES ENTIRELY IN `docs/`. GitHub Pages is configured
+  to deploy from `main` branch, `/docs` folder, which makes `docs/` an allowlist: only
+  what is inside it is ever served. Everything outside `docs/` is working material and is
+  never public.
+  - `docs/index.html` (Home/Landing)
+  - `docs/projects.html`
+  - `docs/writing.html`
+  - `docs/resume.html`
+  - `docs/writing/<slug>.html` (one full-text page per story)
+  - `docs/style.css` — one shared stylesheet linked by every page (single source of visual truth)
+  - `docs/script.js` only if needed
+  - `docs/assets/` — images, video, and the resume PDF
+  - `docs/.nojekyll` — skips Jekyll processing; the site is plain static files
+- NEVER put working material inside `docs/`. `CLAUDE.md`, `content/`, `voice/`, `design/`,
+  `.claude/`, `sources/`, `tasks/`, and `build/` stay at the repo root and stay unpublished.
+  This is not tidiness. `content/` and `design/` contain the raw project notes, including
+  an itemized record of what was deliberately withheld from the MoonRanger card on
+  confidentiality grounds. Publishing that index would be worse than publishing nothing.
+- All paths inside `docs/` are RELATIVE (`style.css`, `assets/...`, `../index.html` from
+  a story page). Never use absolute paths beginning with `/`: GitHub Pages serves project
+  sites from a subpath like `user.github.io/repo/`, and absolute paths break there.
 - Every page shares an identical header/nav and footer so the site feels cohesive.
   The active page is visually indicated in the nav.
 - Fonts via a reputable CDN (e.g. Google Fonts) are fine.
@@ -106,13 +119,13 @@ Rules that always apply, regardless of which projects are listed:
 
 ## Rules & Constraints
 
-- ASSETS ARE PUBLIC. The assets/ directory is served publicly by GitHub Pages: every
-  file in it becomes a downloadable URL. Only two kinds of file may live in assets/:
+- ASSETS ARE PUBLIC. The docs/assets/ directory is served publicly by GitHub Pages: every
+  file in it becomes a downloadable URL. Only two kinds of file may live in docs/assets/:
   (1) media that a page actually displays (images, embedded videos/gifs), and (2) the
   resume PDF (which is meant to be publicly downloadable). NOTHING ELSE. No source
   documents, no PDFs (except the resume), no pptx/docx, no README copies, no raw or
   superseded media. All such source material lives in sources/ at the project root,
-  which is gitignored and never served. Any agent that adds a file to assets/ must
+  which is gitignored and never served. Any agent that adds a file to docs/assets/ must
   confirm it is card-displayed media or the resume; if not, it goes in sources/. This
   protects confidential material (e.g. the MoonRanger flight-software PDF) from being
   served next to the copy that was carefully written to exclude it.
