@@ -754,6 +754,16 @@ h3, .h3 {
 
 /* --------------------------------------------------------------------------
    13. Motion
+
+   This block reaches CSS animation and transition only. It cannot stop a
+   <video autoplay loop>: autoplay is a media-element behaviour, not an
+   animation, so no CSS query can reach it. That half is handled in
+   docs/script.js, which pauses the videos and clears their autoplay and loop
+   when the same query matches. The two are meant to be read together; changing
+   the query here without changing it there splits the behaviour in half.
+
+   Every video also carries native `controls`, so the pause affordance WCAG
+   2.2.2 requires exists whether or not JavaScript runs.
    -------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
