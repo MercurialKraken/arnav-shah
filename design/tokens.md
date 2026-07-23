@@ -13,8 +13,25 @@ answer is "don't."
 
 ### 1.1 Families
 
+**Script — Mrs Saint Delafield** (Google Fonts). **Adopted, scoped to display identity.**
+Used, via `.signature`, `.title-script`, and `.wordmark`, for: the masthead wordmark on
+every page, the home page name (`.signature`, hero size), and the page titles of Projects,
+Writing, and Resume (`.title-script`, at ordinary `h1` size, face swapped only). All are
+the site's display identity, set in one hand. Loaded site-wide, via
+`--font-script`. NOT used on the story-page titles, which stay in Newsreader (they are
+titles of works, and a story reads as itself, not as a section of the site).
+Why: the design north star is "written by a person, not generated," and the place that
+feeling is literal rather than evoked is a signature. Setting the wordmark and each page's
+hero title in one script hand makes the whole site feel signed. The stack ends in the
+serif, so a CDN failure degrades to Newsreader rather than a system cursive.
+**Scoped to display titles and the wordmark, nothing else.** Never on a section head, a
+project or piece title, a label, a deck, or any body text. A script face on running text,
+or repeated at small sizes, is the tacky failure the scope exists to prevent. It runs small
+(most of its em is flourish), so `.signature` sizes it up well past the nominal `h1`.
+
 **Serif — Newsreader** (Production Type, Google Fonts).
-Used for: all headings, all prose, project titles, writing titles, the Italic Deck.
+Used for: all headings, all prose, project titles, writing titles, the Italic Deck, the
+drop-cap.
 Why: it's an editorial serif built for reading at length — high stroke contrast, ball
 terminals, a slightly narrow set that feels typeset rather than defaulted, and a
 variable optical-size axis so large headings tighten correctly. Its italic is
@@ -155,9 +172,20 @@ Every ratio below is computed against `#F3EDE1`, not asserted.
   the red now sits in the same warm family as the paper instead of stamping on top of it.
   That is more literary, not less. `--accent-hover` holds at 9.34:1.
 
-**One accent, used sparingly.** Oxblood appears in exactly three places: link text, the
-short rule above the Italic Deck, and the active-nav marker. Nowhere else. No accent
-backgrounds, no accent headings, no tinted panels.
+**One accent.** Oxblood appears as: link text, the short rule above the Italic Deck, the
+active-nav marker, the drop-cap that opens a body of prose, and one deliberate one-off, the
+words "Robotics Major" in the home identity line. Nowhere else. No accent backgrounds, no
+accent headings, no tinted panels.
+
+The drop-cap is the accent's fourth role, added deliberately. It is coherent with the
+other three: each marks a threshold or an interactive edge, and the drop-cap marks the
+entry into a body of writing, the way the deck rule marks the entry under a title. The rule
+is **one drop-cap per body of prose, at its opening.** A single-body page (the landing, a
+story) gets one. The projects page is a listing of eight bodies, so each project's summary
+opens with its own, one per entry. That is consistent, not a scatter: the cap always means
+"a piece of prose starts here." If an opening line is too short to wrap the floated cap (a
+dateline, a one-line stub), it gets none rather than an orphaned one, and the cap moves to
+the first real paragraph instead (as on the "What About Bob" story page).
 
 **One caveat to respect:** accent on `--paper-sunk` measures **6.46:1** — AA, not AAA.
 Do not put oxblood link text on a sunk ground at prose size. The resume download link
@@ -407,6 +435,10 @@ system in §4.2: shared height, natural ratio, width derived, centered on the sa
 `--radius: 2px`, `--sp-5` above and below, optional sans `--fs-meta` caption in
 `--ink-soft` (capped at `--entry-col`, not at 66ch, since it is set in the sans face).
 No hover lift, no scale transform; hovering the title shifts it to `--accent`.
+*Titles are Newsreader italic* (weight 500), not roman: the "written by an editor"
+treatment from swatch direction B, applied to project and writing-index titles. Page
+titles (the `h1` under each page's deck) stay roman, so the italic deck below them keeps
+its contrast. The project summary's first paragraph opens with an oxblood drop-cap (§2).
 *Tech tags:* mono `--fs-tag` in `--ink-soft`, each in a `1px solid var(--rule)` box at
 `--radius: 2px` with `--sp-1`/`--sp-3` padding, `--sp-3` gap, wrapping freely. Boxed
 rather than bare so the tags read as a discrete data row and not as a caption. No fill,
@@ -575,10 +607,13 @@ nav, footer, .meta, .label, .ui, .tag { font-variant-numeric: lining-nums; }
 ## 10. Non-negotiables checklist
 
 - [ ] No box-shadows, no gradients, no radii above 2px.
-- [ ] Exactly one accent color, in exactly three roles (links, deck rule, active nav).
-- [ ] Exactly three font families — serif (prose), sans (chrome/UI), mono. Mono is
-      scoped to technical metadata only: project tech tags, dates, metrics. Never prose,
-      never writing, never titles, never nav or footer.
+- [ ] Exactly one accent color, in exactly four roles (links, deck rule, active nav,
+      drop-cap). One drop-cap per body of prose, at its opening (so one on a single-body
+      page, one per entry on the projects listing).
+- [ ] Four font families — serif (prose), sans (chrome/UI), mono, script. Mono is scoped
+      to technical metadata only: project tech tags, dates, metrics. Script is scoped to
+      the home page name only, loaded on index.html only. Never prose, never writing,
+      never titles, never nav or footer, and script never anywhere but the home name.
 - [ ] Exactly one Italic Deck per page, one line long.
 - [ ] Body prose never exceeds 66ch.
 - [ ] `--measure-prose` is used for PROSE ONLY, never as a shared structural cap.

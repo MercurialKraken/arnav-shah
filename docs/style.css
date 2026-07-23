@@ -13,6 +13,9 @@
   --font-serif: "Newsreader", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
   --font-sans:  "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono:  "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace;
+  /* Fourth family, scoped to the home page signature only. Ends in the serif so a
+     CDN failure degrades to the name in Newsreader rather than a system cursive. */
+  --font-script: "Mrs Saint Delafield", var(--font-serif);
 
   /* Type — scale */
   --fs-display: clamp(3rem, 7vw, 4.5rem);
@@ -173,6 +176,34 @@ h1, h2, h3, p, ul, ol, figure { margin: 0; }
   letter-spacing: var(--ls-display);
 }
 
+/* Signature — the home page name, and nowhere else. A script face is the one
+   place the "written by a person" feeling is literal rather than evoked: this is
+   a signature. Scoped to a single word on a single page, the way mono is scoped
+   to metadata, so it never becomes decoration. Font loaded on index.html only.
+   Runs large because script faces carry most of their em in flourish, so they
+   read small against a roman face at the same nominal size. Falls back to the
+   serif if the CDN face fails, which degrades to the name in Newsreader, on brand. */
+.signature {
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: clamp(4rem, 11vw, 7rem);
+  line-height: 1;
+  letter-spacing: 0;
+  padding-left: 0.06em;   /* keep the entry flourish off the column edge */
+}
+
+/* Page title in the script hand. Sized between the ordinary h1 and the hero
+   signature: bigger than a plain heading so the script has room to read, but well
+   short of the home name, which stays the largest mark on the site. */
+.title-script {
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: clamp(2.75rem, 6vw, 4rem);
+  letter-spacing: 0;
+  line-height: 1.1;
+  padding-left: 0.06em;
+}
+
 h1, .h1 {
   font-family: var(--font-serif);
   font-size: var(--fs-h1);
@@ -209,6 +240,9 @@ h3, .h3 {
   margin-top: var(--sp-5);
   padding-top: var(--sp-5);
   position: relative;
+  /* Balance the lines so a single word (e.g. "Minor.") cannot orphan onto its own
+     line. Distributes words evenly across the wrap instead of filling greedily. */
+  text-wrap: balance;
 }
 
 .deck::before {
@@ -224,6 +258,37 @@ h3, .h3 {
 .prose {
   max-width: var(--measure-prose);
 }
+
+/* Drop-cap — one per page, opening the landing body and a story. The literary
+   threshold mark, and the accent's fourth role (see §2): oxblood marks the entry
+   into a piece of prose, the way the deck rule marks the entry under a title.
+   Applied by class, never automatically, so it only lands where the opening
+   paragraph is long enough to wrap around the floated letter. A short opening
+   line (e.g. a dateline) would orphan the cap, so those pages do not get one.
+   ::first-letter is presentation only; it changes no text and screen readers read
+   the word normally, which keeps a verbatim story artifact verbatim. */
+.dropcap::first-letter,
+.entry__body > p:first-of-type::first-letter {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  float: left;
+  font-size: 3.8em;
+  line-height: 0.78;
+  padding-right: 0.06em;
+  margin-top: 0.02em;
+  color: var(--accent);
+}
+
+/* An author-directed styling of one story's opening line: the dateline that
+   opens "What About Bob" is set italic. Presentation only, the text is verbatim. */
+.story__opening-line { font-style: italic; }
+
+/* Emphasis inside the home identity line. Newsreader italic tops out at 600 in the
+   loaded range, which reads as bold against the deck's 300. Inherits the deck's
+   italic. The accent variant marks "Robotics Major" oxblood, a deliberate one-off
+   on the one line that names who he is (see §2). */
+.deck-em { font-weight: 600; }
+.deck-em--accent { color: var(--accent); }
 
 .prose p + p { margin-top: var(--sp-4); }
 
@@ -341,14 +406,15 @@ h3, .h3 {
 }
 
 .wordmark {
-  font-family: var(--font-serif);
-  font-size: var(--fs-h3);
-  font-weight: 500;
-  letter-spacing: var(--ls-h3);
+  font-family: var(--font-script);   /* the signature, repeated as the site's identity mark */
+  font-size: 1.75rem;                /* script runs small; sized up from --fs-h3 to stay legible */
+  font-weight: 400;
+  letter-spacing: 0;
   line-height: 1;
   color: var(--ink);
   text-decoration: none;
 }
+.wordmark:hover, .wordmark:focus-visible { color: var(--accent); }
 
 .wordmark:hover, .wordmark:focus-visible { color: var(--accent); }
 
@@ -456,7 +522,14 @@ h3, .h3 {
   margin-bottom: var(--sp-3);
 }
 
-.entry__title { margin-bottom: var(--sp-2); }
+/* Project titles set in Newsreader italic: the "written by an editor" treatment
+   (swatch direction B). Italic reads lighter than roman, so weight eases to 500
+   to keep 20px titles from going heavy. */
+.entry__title {
+  margin-bottom: var(--sp-2);
+  font-style: italic;
+  font-weight: 500;
+}
 
 .entry__title a {
   color: var(--ink);
@@ -714,7 +787,13 @@ h3, .h3 {
 
 .piece:last-child { padding-bottom: 0; }
 
-.piece__title { margin-bottom: var(--sp-2); }
+/* Writing-index titles, same italic treatment (direction B). Story and piece
+   titles in italic is also the standard publishing convention for titles of works. */
+.piece__title {
+  margin-bottom: var(--sp-2);
+  font-style: italic;
+  font-weight: 500;
+}
 
 .piece__title a {
   color: var(--ink);
