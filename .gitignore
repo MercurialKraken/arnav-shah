@@ -18,6 +18,14 @@
 # Keep source material here. Do not move it back into assets/.
 sources/
 
+# Working material kept out of the repo entirely. content/ holds the raw project
+# notes (including the MoonRanger "withheld on confidentiality grounds" index) and the
+# finished copy; voice/ holds Arnav's personal writing samples. The site is built from
+# these but does not need them at runtime, and on a public repo they would be browsable.
+# The built site in docs/ is unaffected. Kept local, not pushed.
+content/
+voice/
+
 # OS / editor noise
 .DS_Store
 Thumbs.db
