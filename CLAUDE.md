@@ -55,11 +55,10 @@ portfolio. It is a static site, hand-buildable, deployed to GitHub Pages.
   - `docs/index.html` (Home/Landing)
   - `docs/projects.html`
   - `docs/writing.html`
-  - `docs/resume.html`
   - `docs/writing/<slug>.html` (one full-text page per story)
   - `docs/style.css` — one shared stylesheet linked by every page (single source of visual truth)
   - `docs/script.js` only if needed
-  - `docs/assets/` — images, video, and the resume PDF
+  - `docs/assets/` — images and video displayed by the pages
   - `docs/.nojekyll` — skips Jekyll processing; the site is plain static files
 - NEVER put working material inside `docs/`. `CLAUDE.md`, `content/`, `voice/`, `design/`,
   `.claude/`, `sources/`, `tasks/`, and `build/` stay at the repo root and stay unpublished.
@@ -85,10 +84,12 @@ portfolio. It is a static site, hand-buildable, deployed to GitHub Pages.
    `content/projects/` (see the Projects section below).
 3. **Writing Portfolio** (`writing.html`) — a curated space for Arnav's creative writing.
    Presented with the same care as the projects, not as an afterthought.
-4. **Resume** (`resume.html`) — embedded view of the PDF (visible on-page without a
-   click) plus a download link.
 
-Shared across every page: an identical header/nav (linking all four pages, active page
+(A Resume page was built and then removed at Arnav's request. The resume PDF now lives in
+`sources/` and is not served. Do not re-add a resume page or a Resume nav link without
+being asked.)
+
+Shared across every page: an identical header/nav (linking all three pages, active page
 indicated) and an identical footer. Footer holds quiet links only — email, LinkedIn,
 GitHub. NO dedicated contact section or "get in touch" call-to-action.
 
@@ -120,15 +121,15 @@ Rules that always apply, regardless of which projects are listed:
 ## Rules & Constraints
 
 - ASSETS ARE PUBLIC. The docs/assets/ directory is served publicly by GitHub Pages: every
-  file in it becomes a downloadable URL. Only two kinds of file may live in docs/assets/:
-  (1) media that a page actually displays (images, embedded videos/gifs), and (2) the
-  resume PDF (which is meant to be publicly downloadable). NOTHING ELSE. No source
-  documents, no PDFs (except the resume), no pptx/docx, no README copies, no raw or
-  superseded media. All such source material lives in sources/ at the project root,
-  which is gitignored and never served. Any agent that adds a file to docs/assets/ must
-  confirm it is card-displayed media or the resume; if not, it goes in sources/. This
-  protects confidential material (e.g. the MoonRanger flight-software PDF) from being
-  served next to the copy that was carefully written to exclude it.
+  file in it becomes a downloadable URL. Only ONE kind of file may live in docs/assets/:
+  media that a page actually displays (images, embedded videos/gifs). NOTHING ELSE. No
+  source documents, no PDFs, no pptx/docx, no README copies, no raw or superseded media.
+  All such source material lives in sources/ at the project root, which is gitignored and
+  never served. Any agent that adds a file to docs/assets/ must confirm it is
+  card-displayed media; if not, it goes in sources/. This protects confidential material
+  (e.g. the MoonRanger flight-software PDF) from being served next to the copy that was
+  carefully written to exclude it. (The resume PDF used to be the one exception here; the
+  resume page was removed and the PDF now lives in sources/.)
 - Do NOT build a contact page or any "get in touch" CTA. Links go quietly in the footer.
 - Do NOT use any framework or build tooling. Vanilla only.
 - Do NOT duplicate the quadruped writeup page into this site; link out to it.
@@ -148,13 +149,12 @@ Rules that always apply, regardless of which projects are listed:
 
 ## Definition of Done (v1)
 
-- Four responsive HTML pages (`index`, `projects`, `writing`, `resume`) sharing one
+- Three responsive HTML pages (`index`, `projects`, `writing`) sharing one
   `style.css`, all deploying to GitHub Pages.
 - Identical header/nav and footer on every page; active page indicated in nav.
-- All four sections present and complete — no Lorem Ipsum, real content throughout.
+- All sections present and complete — no Lorem Ipsum, real content throughout.
 - Every project in `content/projects/` represented on the projects page, in the order
   from `ORDER.md`, each with its correct media/links as specified in its own file.
-- Resume embedded and downloadable.
 - Typography reflects the design north star (literary serif + clean sans).
 - Footer links present (email, LinkedIn, GitHub).
 - No placeholder or fabricated content shipped; any genuine gaps clearly flagged.

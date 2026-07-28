@@ -730,50 +730,6 @@ h3, .h3 {
 
 .site-footer .is-missing { color: var(--ink-faint); }
 
-/* --------------------------------------------------------------------------
-   11. Resume viewer (§7) — defined here so the shared sheet serves every page
-   -------------------------------------------------------------------------- */
-
-.resume-download {
-  display: block;
-  text-align: right;
-  margin-bottom: var(--sp-4);
-  font-family: var(--font-sans);
-  font-size: var(--fs-meta);
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.resume-download:hover, .resume-download:focus-visible {
-  color: var(--accent-hover);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
-}
-
-.resume-frame {
-  border: var(--hairline);
-  background: var(--paper-sunk);
-  padding: var(--sp-4);
-}
-
-.resume-frame object,
-.resume-frame iframe {
-  display: block;
-  width: 100%;
-  min-height: 85vh;
-  border: 0;
-}
-
-.resume-fallback { display: none; }
-
-/* PDF embeds are unreliable under 768px: collapse to a download link (§7, §8) */
-@media (max-width: 47.999rem) {
-  .resume-frame { display: none; }
-  /* the download link belongs TO the hidden viewer; the fallback carries its own */
-  .resume-download { display: none; }
-  .resume-fallback { display: block; }
-}
 
 /* --------------------------------------------------------------------------
    12. Writing page (§7) — more air than projects, no mono anywhere
